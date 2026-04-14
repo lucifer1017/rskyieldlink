@@ -26,7 +26,8 @@ export function formatWeiAsBtc(wei: bigint, decimals = 8): string {
 export function parseBtcToWei(btc: string): bigint {
   try {
     const trimmed = btc.trim();
-    if (!trimmed || !/^\d+(\.\d+)?$/.test(trimmed)) return 0n;
+    // BTC supports up to 8 decimal places (satoshis).
+    if (!trimmed || !/^(?:\d+|\d*\.\d{1,8})$/.test(trimmed)) return 0n;
     const [whole = "0", frac = ""] = trimmed.split(".");
     const fracPadded = frac.slice(0, 18).padEnd(18, "0");
     return BigInt(whole) * WEI_PER_BTC + BigInt(fracPadded);

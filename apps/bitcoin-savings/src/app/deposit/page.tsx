@@ -14,6 +14,20 @@ import { Layout } from "../../components/Layout";
 const MIN_AMOUNT = "0.0001";
 const MAX_AMOUNT = "1";
 
+function toUserErrorMessage(error: Error): string {
+  const message = error.message.toLowerCase();
+  if (message.includes("wallet") || message.includes("user rejected")) {
+    return "Wallet action was not completed. Please approve the request and try again.";
+  }
+  if (message.includes("network") || message.includes("chain")) {
+    return "Network mismatch detected. Please switch to Rootstock Testnet and retry.";
+  }
+  if (message.includes("insufficient")) {
+    return "Insufficient balance for this operation.";
+  }
+  return "Something went wrong while processing the deposit flow.";
+}
+
 /**
  * Bitcoin Savings Deposit page.
  *
@@ -32,12 +46,14 @@ export default function DepositPage() {
   const maxAmountWei = parseBtcToWei(MAX_AMOUNT);
   const trimmedAmountInput = amountInput.trim();
 
+  const isValidAmountPattern = (value: string) => /^(?:\d+|\d*\.\d{1,8})$/.test(value);
+
   const { amountWei, amountError } = (() => {
     if (!trimmedAmountInput) {
       return { amountWei: 0n, amountError: "Enter a BTC amount." };
     }
 
-    if (!/^\d+(\.\d+)?$/.test(trimmedAmountInput)) {
+    if (!isValidAmountPattern(trimmedAmountInput)) {
       return { amountWei: 0n, amountError: "Enter a valid numeric BTC amount." };
     }
 
@@ -58,8 +74,10 @@ export default function DepositPage() {
   })();
 
   // Fetch whitelisted protocols for Testnet
-  const { getProtocol } = useYieldProtocols("Testnet");
+  const { getProtocol, isApyLoading, isApyDegraded, apyError, apyLastUpdatedAt } =
+    useYieldProtocols("Testnet");
   const sovrynProtocol = getProtocol(SOVRYN_PROTOCOL_ID);
+  const validAmountWei = amountError ? undefined : amountWei > 0n ? amountWei : undefined;
 
   // All-in-one hook: Flyover peg-in → Sovryn deposit
   const {
@@ -76,7 +94,7 @@ export default function DepositPage() {
     deliveredAmountWei,
   } = useSovrynDeposit({
     rskAddress: address,
-    amountWei: amountWei > 0n ? amountWei : undefined,
+    amountWei: validAmountWei,
     network: "Testnet",
   });
 
@@ -156,12 +174,11 @@ export default function DepositPage() {
           <div className="relative">
             <input
               id="btc-amount"
-              type="number"
+              type="text"
+              inputMode="decimal"
+              pattern="^(?:\\d+|\\d*\\.\\d{1,8})$"
               value={amountInput}
               onChange={handleAmountChange}
-              step="0.0001"
-              min={MIN_AMOUNT}
-              max={MAX_AMOUNT}
               disabled={isFlowActive}
               placeholder="0.001"
               aria-invalid={!!amountError}
@@ -185,8 +202,11 @@ export default function DepositPage() {
         {/* Main YieldDeposit widget */}
         <YieldDeposit
           rskAddress={address}
-          amountWei={amountWei > 0n ? amountWei : undefined}
+          amountWei={validAmountWei}
           protocol={sovrynProtocol}
+          isApyLoading={isApyLoading}
+          isApyDegraded={isApyDegraded}
+          apyUpdatedAt={apyLastUpdatedAt}
           network="Testnet"
           overrideStatus={status}
           isDepositing={isDepositing}
@@ -217,8 +237,15 @@ export default function DepositPage() {
             <p className="font-semibold">Peg-in failed or expired</p>
             <p className="mt-1 text-xs opacity-80">
               The Flyover quote expired before a BTC deposit was detected.
-              Reload the page to start again.
+              Start a new quote to try again.
             </p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="mt-3 rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900/40"
+            >
+              Start New Quote
+            </button>
           </div>
         )}
 
@@ -229,7 +256,17 @@ export default function DepositPage() {
             className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300"
           >
             <p className="font-semibold">Error</p>
-            <p className="mt-1 text-xs opacity-80">{error.message}</p>
+            <p className="mt-1 text-xs opacity-80">{toUserErrorMessage(error)}</p>
+          </div>
+        )}
+
+        {/* APY source status */}
+        {(isApyDegraded || apyError) && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+            <p className="font-semibold">Live APY temporarily unavailable</p>
+            <p className="mt-1 text-xs opacity-80">
+              Deposits are unaffected. APY will refresh automatically.
+            </p>
           </div>
         )}
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { truncateAddress } from "../utils";
 
 export interface PegInQRCodeProps {
@@ -25,14 +25,31 @@ export function PegInQRCode({
 }: PegInQRCodeProps) {
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState<string | null>(null);
+  const copyResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (copyResetTimeoutRef.current) {
+        clearTimeout(copyResetTimeoutRef.current);
+      }
+    },
+    []
+  );
+
+  function markCopied() {
+    setCopied(true);
+    if (copyResetTimeoutRef.current) {
+      clearTimeout(copyResetTimeoutRef.current);
+    }
+    copyResetTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
+  }
 
   async function handleCopy() {
     setCopyError(null);
 
     try {
       await navigator.clipboard.writeText(btcDepositAddress);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      markCopied();
       return;
     } catch {}
 
@@ -48,8 +65,7 @@ export function PegInQRCode({
     try {
       const success = document.execCommand("copy");
       if (success) {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        markCopied();
       } else {
         setCopyError("Copy failed. Please copy the address manually.");
       }
@@ -81,7 +97,12 @@ export function PegInQRCode({
           />
         </div>
       ) : (
-        <div className="flex h-[206px] w-[206px] items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800">
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex h-[206px] w-[206px] items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800"
+        >
+          <span className="sr-only">Generating BTC deposit QR code</span>
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" />
         </div>
       )}

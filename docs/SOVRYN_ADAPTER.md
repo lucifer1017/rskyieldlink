@@ -75,8 +75,8 @@ const hash = await walletClient.sendTransaction({
 
 | Network | iRBTC LoanToken |
 |---------|-----------------|
-| Mainnet | `0xa9DcM63e9d6F35F997E7B4e72F8595f737c6A138` |
-| Testnet | Same (verify from Sovryn) |
+| Mainnet | `0xa9DcDC63eaBb8a2b6f39D7fF9429d88340044a7A` |
+| Testnet | `0xe67Fe227e0504e8e96A34C3594795756dC26e14B` |
 
 **Important:** Verify addresses from Sovryn's official sources before mainnet use:
 - https://github.com/DistributedCollective/Sovryn-smart-contracts

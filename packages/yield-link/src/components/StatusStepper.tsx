@@ -30,8 +30,9 @@ function statusToStep(status: DepositFlowStatus): number {
     case "complete":
       return 4;
     case "failed":
+      return 2;
     case "error":
-      return -1; // error state – handled separately
+      return 3;
     default:
       return 0;
   }
@@ -49,9 +50,9 @@ export function StatusStepper({ status }: StatusStepperProps) {
     <div aria-label="Deposit progress" className="w-full">
       <ol className="flex items-start">
         {STEPS.map((step, idx) => {
-          const isDone = !isError && idx < currentStep;
-          const isActive = !isError && idx === currentStep;
-          const isPending = !isError && idx > currentStep;
+          const isDone = idx < currentStep;
+          const isActive = idx === currentStep;
+          const isPending = idx > currentStep;
 
           const circleClass = isError && idx === currentStep
             ? "bg-red-500 text-white ring-2 ring-red-200"
@@ -88,12 +89,12 @@ export function StatusStepper({ status }: StatusStepperProps) {
               )}
               {/* Circle */}
               <div
-                className={`relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition-colors ${circleClass}`}
+                className={`relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors ${circleClass}`}
               >
                 {isDone ? "✓" : isError && isActive ? "✗" : idx + 1}
               </div>
               {/* Labels */}
-              <p className={`mt-1.5 text-center text-[10px] leading-tight ${labelClass}`}>
+              <p className={`mt-1.5 text-center text-xs leading-tight ${labelClass}`}>
                 {step.label}
               </p>
             </li>

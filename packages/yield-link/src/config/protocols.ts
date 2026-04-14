@@ -14,15 +14,14 @@ export const WHITELISTED_PROTOCOLS: YieldProtocol[] = [
   {
     id: SOVRYN_PROTOCOL_ID,
     name: "Sovryn",
-    // Indicative APY for UI display. Replace with live APY source when available.
-    apy: 4.2,
+    apy: undefined,
     contractAddress: SOVRYN_RBTC_LENDING_MAINNET,
     chainId: ROOTSTOCK_MAINNET_CHAIN_ID,
   },
   {
     id: SOVRYN_PROTOCOL_ID,
     name: "Sovryn (Testnet)",
-    apy: 4.2,
+    apy: undefined,
     contractAddress: SOVRYN_RBTC_LENDING_TESTNET,
     chainId: ROOTSTOCK_TESTNET_CHAIN_ID,
   },

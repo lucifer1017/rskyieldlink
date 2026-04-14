@@ -101,5 +101,5 @@ rskyieldlink/
 
 - Demo targets Rootstock Testnet by default.
 - Protocol whitelist currently includes Sovryn entries (mainnet + testnet configs).
-- APY values are currently static placeholders until live APY integration is added.
+- Sovryn APY is fetched live on-chain from `supplyInterestRate()` with fallback handling.
 - No backend service exists in this repo; all flow logic is frontend/SDK based.

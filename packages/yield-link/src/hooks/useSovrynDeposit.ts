@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useWalletClient, useSwitchChain } from "wagmi";
+import { getWalletClient } from "wagmi/actions";
+import { useConfig, useWalletClient, useSwitchChain } from "wagmi";
 import { useYieldDeposit } from "./useYieldDeposit";
 import type { DepositFlowStatus } from "./useYieldDeposit";
 import { getAdapter } from "../adapters/registry";
@@ -82,6 +83,7 @@ export function useSovrynDeposit(
   );
 
   const { data: walletClient } = useWalletClient();
+  const wagmiConfig = useConfig();
   const { switchChainAsync } = useSwitchChain();
 
   const [depositTxHash, setDepositTxHash] = useState<`0x${string}` | undefined>();
@@ -96,17 +98,25 @@ export function useSovrynDeposit(
   const executor = useCallback(
     async (params: { to: `0x${string}`; data: `0x${string}`; value: bigint }) => {
       if (!walletClient) throw new Error("No wallet connected.");
-      if (walletClient.chain?.id !== chainId && switchChainAsync) {
+
+      let txClient = walletClient;
+      if (txClient.chain?.id !== chainId && switchChainAsync) {
         await switchChainAsync({ chainId });
+        const switchedClient = await getWalletClient(wagmiConfig, { chainId });
+        if (!switchedClient) {
+          throw new Error("Wallet not available after network switch.");
+        }
+        txClient = switchedClient;
       }
-      return walletClient.sendTransaction({
+
+      return txClient.sendTransaction({
         to: params.to,
         data: params.data,
         value: params.value,
         chainId,
       });
     },
-    [walletClient, chainId, switchChainAsync]
+    [walletClient, chainId, switchChainAsync, wagmiConfig]
   );
 
   /**
@@ -116,14 +126,29 @@ export function useSovrynDeposit(
   const executeDeposit = useCallback(
     async (payload?: { amountWei: bigint }) => {
       const amount = payload?.amountWei ?? amountWei;
-      if (!rskAddress || !amount || amount <= 0n || !protocol) return;
-
-      const adapter = getAdapter(SOVRYN_PROTOCOL_ID);
-      if (!adapter) throw new Error("Sovryn adapter not registered.");
-
-      setIsDepositing(true);
       setDepositError(undefined);
       setDepositTxHash(undefined);
+
+      if (!rskAddress) {
+        setDepositError(new Error("Connect your wallet before depositing."));
+        return;
+      }
+      if (!amount || amount <= 0n) {
+        setDepositError(new Error("Deposit amount is invalid."));
+        return;
+      }
+      if (!protocol) {
+        setDepositError(new Error("Selected yield protocol is unavailable."));
+        return;
+      }
+
+      const adapter = getAdapter(SOVRYN_PROTOCOL_ID);
+      if (!adapter) {
+        setDepositError(new Error("Sovryn adapter is not registered."));
+        return;
+      }
+
+      setIsDepositing(true);
 
       try {
         const hash = await adapter.deposit(amount, rskAddress, protocol, executor);

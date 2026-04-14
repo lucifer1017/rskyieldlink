@@ -37,6 +37,10 @@ export interface YieldDepositProps {
   isDepositing?: boolean;
   /** APY loading state for APYDisplay skeleton */
   isApyLoading?: boolean;
+  /** APY source degraded mode */
+  isApyDegraded?: boolean;
+  /** Last APY refresh timestamp */
+  apyUpdatedAt?: Date | null;
 }
 
 const STATUS_LABEL: Record<DepositFlowStatus, string> = {
@@ -50,6 +54,20 @@ const STATUS_LABEL: Record<DepositFlowStatus, string> = {
   error: "Something went wrong",
 };
 
+function toUserErrorMessage(error: Error): string {
+  const message = error.message.toLowerCase();
+  if (message.includes("wallet") || message.includes("user rejected")) {
+    return "Wallet confirmation was not completed.";
+  }
+  if (message.includes("network") || message.includes("chain")) {
+    return "Please switch to the expected Rootstock network and retry.";
+  }
+  if (message.includes("insufficient")) {
+    return "Insufficient balance for this action.";
+  }
+  return "An unexpected error occurred in the deposit flow.";
+}
+
 export function YieldDeposit({
   rskAddress,
   amountWei,
@@ -61,6 +79,8 @@ export function YieldDeposit({
   depositError,
   isDepositing = false,
   isApyLoading = false,
+  isApyDegraded = false,
+  apyUpdatedAt,
 }: YieldDepositProps) {
   const {
     status: baseStatus,
@@ -99,7 +119,12 @@ export function YieldDeposit({
 
       {/* ── Protocol / APY ─────────────────────────────────────────────── */}
       {protocol && (
-        <APYDisplay protocol={protocol} isLoading={isApyLoading} />
+        <APYDisplay
+          protocol={protocol}
+          isLoading={isApyLoading}
+          isDegraded={isApyDegraded}
+          updatedAt={apyUpdatedAt}
+        />
       )}
 
       {/* ── Status Stepper ─────────────────────────────────────────────── */}
@@ -163,7 +188,7 @@ export function YieldDeposit({
           className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-300"
         >
           <p className="font-semibold">Error</p>
-          <p className="mt-0.5 text-xs opacity-80">{combinedError.message}</p>
+          <p className="mt-0.5 text-xs opacity-80">{toUserErrorMessage(combinedError)}</p>
         </div>
       )}
     </div>

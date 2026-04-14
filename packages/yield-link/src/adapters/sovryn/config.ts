@@ -20,7 +20,7 @@ import { ROOTSTOCK_MAINNET_CHAIN_ID, ROOTSTOCK_TESTNET_CHAIN_ID } from "../../co
  * ⚠️  MUST VERIFY: Confirm at https://explorer.rsk.co before mainnet use.
  */
 export const SOVRYN_RBTC_LENDING_MAINNET =
-  "0xa9DcC8C8Bf1E03e7a5Eed3D7C3E5D9E6dF7Fdb2" as const;
+  "0xa9DcDC63eaBb8a2b6f39D7fF9429d88340044a7A" as const;
 
 /**
  * Sovryn iRBTC LoanToken – RSK Testnet (Chain ID 31).
@@ -31,7 +31,7 @@ export const SOVRYN_RBTC_LENDING_MAINNET =
  *   - Find it in Sovryn's testnet deployment JSON on GitHub (link above).
  */
 export const SOVRYN_RBTC_LENDING_TESTNET =
-  "0xe67Fe227e0504e8e96A34C3594795756dC26e14d" as const;
+  "0xe67Fe227e0504e8e96A34C3594795756dC26e14B" as const;
 
 export const SOVRYN_CONTRACTS = {
   [ROOTSTOCK_MAINNET_CHAIN_ID]: SOVRYN_RBTC_LENDING_MAINNET,

@@ -8,6 +8,13 @@ import {
 } from "./flyover-client";
 import { formatWeiAsBtc } from "../utils";
 
+const WEI_PER_SATOSHI = 10n ** 10n;
+
+function ceilWeiToSatoshi(wei: bigint): bigint {
+  if (wei <= 0n) return 0n;
+  return ((wei + WEI_PER_SATOSHI - 1n) / WEI_PER_SATOSHI) * WEI_PER_SATOSHI;
+}
+
 /**
  * Uses the SDK's own FlyoverUtils.getSimpleQuoteStatus to determine completion.
  * Returns 'SUCCESS' for CallForUserSucceeded / RegisterPegInSucceeded.
@@ -58,7 +65,9 @@ export async function createAndAcceptPegInQuote(
   }
 
   const valueWei = FlyoverUtils.getQuoteTotal(quotes[0]);
-  const amountBtc = formatWeiAsBtc(valueWei, 8);
+  // BTC transfers are satoshi-based (8 decimals). Round up to avoid underpaying.
+  const qrAmountWei = ceilWeiToSatoshi(valueWei);
+  const amountBtc = formatWeiAsBtc(qrAmountWei, 8);
   const qrCodeDataUrl = await flyover.generateQrCode(
     depositAddress,
     amountBtc,
