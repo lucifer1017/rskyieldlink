@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useAccount, useConnect } from "wagmi";
-import { parseEther } from "viem";
 import {
+  parseBtcToWei,
   useSovrynDeposit,
   useYieldProtocols,
   YieldDeposit,
@@ -28,16 +28,33 @@ export default function DepositPage() {
   const injected = connectors.find((c) => c.type === "injected") ?? connectors[0];
 
   const [amountInput, setAmountInput] = useState("0.001");
-  const [amountError, setAmountError] = useState<string | null>(null);
+  const minAmountWei = parseBtcToWei(MIN_AMOUNT);
+  const maxAmountWei = parseBtcToWei(MAX_AMOUNT);
+  const trimmedAmountInput = amountInput.trim();
 
-  const amountWei = (() => {
-    try {
-      const val = parseFloat(amountInput);
-      if (isNaN(val) || val <= 0) return 0n;
-      return parseEther(amountInput);
-    } catch {
-      return 0n;
+  const { amountWei, amountError } = (() => {
+    if (!trimmedAmountInput) {
+      return { amountWei: 0n, amountError: "Enter a BTC amount." };
     }
+
+    if (!/^\d+(\.\d+)?$/.test(trimmedAmountInput)) {
+      return { amountWei: 0n, amountError: "Enter a valid numeric BTC amount." };
+    }
+
+    const parsedWei = parseBtcToWei(trimmedAmountInput);
+    if (parsedWei <= 0n) {
+      return { amountWei: 0n, amountError: "Enter a positive amount." };
+    }
+
+    if (parsedWei < minAmountWei) {
+      return { amountWei: parsedWei, amountError: `Minimum is ${MIN_AMOUNT} BTC.` };
+    }
+
+    if (parsedWei > maxAmountWei) {
+      return { amountWei: parsedWei, amountError: `Maximum is ${MAX_AMOUNT} BTC.` };
+    }
+
+    return { amountWei: parsedWei, amountError: null };
   })();
 
   // Fetch whitelisted protocols for Testnet
@@ -47,9 +64,7 @@ export default function DepositPage() {
   // All-in-one hook: Flyover peg-in → Sovryn deposit
   const {
     status,
-    createQuote,
     btcDepositAddress,
-    qrCodeDataUrl,
     isCreatingQuote,
     isPegInComplete,
     isPegInFailed,
@@ -69,18 +84,7 @@ export default function DepositPage() {
     !!btcDepositAddress || isCreatingQuote || isDepositing || status === "complete";
 
   function handleAmountChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const val = e.target.value;
-    setAmountInput(val);
-    const num = parseFloat(val);
-    if (isNaN(num) || num <= 0) {
-      setAmountError("Enter a positive amount.");
-    } else if (num < parseFloat(MIN_AMOUNT)) {
-      setAmountError(`Minimum is ${MIN_AMOUNT} BTC.`);
-    } else if (num > parseFloat(MAX_AMOUNT)) {
-      setAmountError(`Maximum is ${MAX_AMOUNT} BTC.`);
-    } else {
-      setAmountError(null);
-    }
+    setAmountInput(e.target.value);
   }
 
   // ── Not connected ──────────────────────────────────────────────────────────
@@ -160,6 +164,8 @@ export default function DepositPage() {
               max={MAX_AMOUNT}
               disabled={isFlowActive}
               placeholder="0.001"
+              aria-invalid={!!amountError}
+              aria-describedby={amountError ? "btc-amount-error btc-amount-help" : "btc-amount-help"}
               className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 pr-14 text-sm text-zinc-900 outline-none transition-colors focus:border-amber-400 focus:ring-2 focus:ring-amber-200 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-amber-500 dark:focus:ring-amber-800"
             />
             <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-zinc-400">
@@ -167,11 +173,11 @@ export default function DepositPage() {
             </span>
           </div>
           {amountError && (
-            <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+            <p id="btc-amount-error" className="mt-1 text-xs text-red-600 dark:text-red-400">
               {amountError}
             </p>
           )}
-          <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
+          <p id="btc-amount-help" className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
             Min {MIN_AMOUNT} · Max {MAX_AMOUNT} · Testnet BTC only
           </p>
         </div>
@@ -186,9 +192,6 @@ export default function DepositPage() {
           isDepositing={isDepositing}
           depositTxHash={depositTxHash}
           depositError={depositError}
-          onPegInComplete={() => {
-            // Auto-handled by useSovrynDeposit; no-op here
-          }}
         />
 
         {/* Manual deposit button (visible after peg-in if deposit failed) */}

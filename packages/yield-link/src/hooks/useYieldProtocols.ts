@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { WHITELISTED_PROTOCOLS } from "../config/protocols";
 import type { YieldProtocol } from "../types";
 import type { FlyoverNetwork } from "../flyover/types";
@@ -37,8 +37,8 @@ export function useYieldProtocols(
     [chainId]
   );
 
-  const getProtocol = useMemo<(id: string) => YieldProtocol | undefined>(
-    () => (id: string) => protocols.find((p) => p.id === id),
+  const getProtocol = useCallback(
+    (id: string) => protocols.find((p) => p.id === id),
     [protocols]
   );
 

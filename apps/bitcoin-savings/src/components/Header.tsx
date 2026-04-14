@@ -29,7 +29,7 @@ export function Header() {
         </Link>
 
         {/* Nav */}
-        <nav className="hidden items-center gap-6 text-sm sm:flex">
+        <nav className="flex items-center gap-3 text-xs sm:gap-6 sm:text-sm">
           <Link
             href="/"
             className="text-zinc-500 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"

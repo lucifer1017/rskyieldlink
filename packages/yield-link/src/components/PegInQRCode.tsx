@@ -24,14 +24,39 @@ export function PegInQRCode({
   network = "Testnet",
 }: PegInQRCodeProps) {
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState<string | null>(null);
 
   async function handleCopy() {
+    setCopyError(null);
+
     try {
       await navigator.clipboard.writeText(btcDepositAddress);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      return;
+    } catch {}
+
+    // Fallback for browsers/contexts where Clipboard API is unavailable.
+    const textArea = document.createElement("textarea");
+    textArea.value = btcDepositAddress;
+    textArea.setAttribute("readonly", "");
+    textArea.style.position = "absolute";
+    textArea.style.left = "-9999px";
+    document.body.appendChild(textArea);
+    textArea.select();
+
+    try {
+      const success = document.execCommand("copy");
+      if (success) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } else {
+        setCopyError("Copy failed. Please copy the address manually.");
+      }
     } catch {
-      // Fallback: select the text manually
+      setCopyError("Copy failed. Please copy the address manually.");
+    } finally {
+      document.body.removeChild(textArea);
     }
   }
 
@@ -88,6 +113,11 @@ export function PegInQRCode({
           {copied ? "✓ Copied" : "Copy"}
         </button>
       </div>
+      {copyError && (
+        <p role="alert" className="text-xs text-red-600 dark:text-red-400">
+          {copyError}
+        </p>
+      )}
 
       {/* Helper tip */}
       <p className="text-center text-xs text-zinc-400 dark:text-zinc-500">

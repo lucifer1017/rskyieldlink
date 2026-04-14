@@ -5,14 +5,16 @@
 
 // ─── Amount formatting ────────────────────────────────────────────────────────
 
+const WEI_PER_BTC = 10n ** 18n;
+
 /**
  * Convert a wei bigint (18-decimal rBTC) to a readable BTC/rBTC string.
  * @example formatWeiAsBtc(1_000_000_000_000_000n) → "0.00100000"
  */
 export function formatWeiAsBtc(wei: bigint, decimals = 8): string {
   if (wei <= 0n) return "0." + "0".repeat(decimals);
-  const whole = wei / BigInt(1e18);
-  const remainder = wei % BigInt(1e18);
+  const whole = wei / WEI_PER_BTC;
+  const remainder = wei % WEI_PER_BTC;
   const fractional = remainder.toString().padStart(18, "0").slice(0, decimals);
   return `${whole}.${fractional}`;
 }
@@ -24,10 +26,10 @@ export function formatWeiAsBtc(wei: bigint, decimals = 8): string {
 export function parseBtcToWei(btc: string): bigint {
   try {
     const trimmed = btc.trim();
-    if (!trimmed || isNaN(Number(trimmed))) return 0n;
+    if (!trimmed || !/^\d+(\.\d+)?$/.test(trimmed)) return 0n;
     const [whole = "0", frac = ""] = trimmed.split(".");
     const fracPadded = frac.slice(0, 18).padEnd(18, "0");
-    return BigInt(whole) * BigInt(1e18) + BigInt(fracPadded);
+    return BigInt(whole) * WEI_PER_BTC + BigInt(fracPadded);
   } catch {
     return 0n;
   }

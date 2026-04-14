@@ -6,7 +6,7 @@ import type { DepositFlowStatus } from "../hooks/useYieldDeposit";
 import { APYDisplay } from "./APYDisplay";
 import { PegInQRCode } from "./PegInQRCode";
 import { StatusStepper } from "./StatusStepper";
-import { formatWeiAsBtc } from "../utils";
+import { explorerTxUrl, formatWeiAsBtc } from "../utils";
 
 export interface YieldDepositProps {
   /** Connected user Rootstock address */
@@ -50,11 +50,6 @@ const STATUS_LABEL: Record<DepositFlowStatus, string> = {
   error: "Something went wrong",
 };
 
-const EXPLORER_BASE = {
-  Mainnet: "https://explorer.rsk.co",
-  Testnet: "https://testnet.rskscan.com",
-};
-
 export function YieldDeposit({
   rskAddress,
   amountWei,
@@ -78,7 +73,6 @@ export function YieldDeposit({
 
   const status = overrideStatus ?? baseStatus;
   const amountBtc = amountWei ? formatWeiAsBtc(amountWei, 6) : undefined;
-  const explorerBase = EXPLORER_BASE[network];
 
   const canCreateQuote =
     !!rskAddress &&
@@ -152,7 +146,7 @@ export function YieldDeposit({
         <div className="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700 dark:bg-green-900/30 dark:text-green-300">
           <p className="font-semibold">✓ Deposit confirmed!</p>
           <a
-            href={`${explorerBase}/tx/${depositTxHash}`}
+            href={explorerTxUrl(depositTxHash, network)}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-1 block truncate font-mono text-xs underline opacity-80 hover:opacity-100"

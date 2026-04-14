@@ -66,7 +66,7 @@ export default function HomePage() {
               <span aria-hidden>→</span>
             </Link>
             <a
-              href="https://github.com"
+              href="https://github.com/lucifer1017/rskyieldlink"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-xl border border-zinc-300 px-6 py-3 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"

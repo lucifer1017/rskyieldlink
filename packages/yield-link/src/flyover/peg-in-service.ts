@@ -6,6 +6,7 @@ import {
   getRecommendedPeginValue,
   FlyoverUtils,
 } from "./flyover-client";
+import { formatWeiAsBtc } from "../utils";
 
 /**
  * Uses the SDK's own FlyoverUtils.getSimpleQuoteStatus to determine completion.
@@ -57,7 +58,7 @@ export async function createAndAcceptPegInQuote(
   }
 
   const valueWei = FlyoverUtils.getQuoteTotal(quotes[0]);
-  const amountBtc = (Number(valueWei) / 1e18).toFixed(8);
+  const amountBtc = formatWeiAsBtc(valueWei, 8);
   const qrCodeDataUrl = await flyover.generateQrCode(
     depositAddress,
     amountBtc,

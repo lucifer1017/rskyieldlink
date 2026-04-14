@@ -93,20 +93,26 @@ export function useYieldDeposit(
     stopWhenComplete: true,
   });
 
-  // Ensure onPegInComplete fires exactly once per quote lifecycle
-  const callbackFiredRef = useRef(false);
+  // Ensure onPegInComplete fires exactly once per unique quote lifecycle.
+  const lastFiredQuoteHashRef = useRef<string | null>(null);
   useEffect(() => {
-    if (pegInStatus.isComplete && onPegInComplete && !callbackFiredRef.current) {
-      callbackFiredRef.current = true;
+    if (
+      pegInStatus.isComplete &&
+      onPegInComplete &&
+      quoteHash &&
+      lastFiredQuoteHashRef.current !== quoteHash
+    ) {
+      lastFiredQuoteHashRef.current = quoteHash;
       const delivered = flyover.quoteResult?.valueWei ?? amountWei ?? 0n;
       onPegInComplete({ amountWei: delivered });
     }
-  }, [pegInStatus.isComplete, onPegInComplete, flyover.quoteResult?.valueWei, amountWei]);
-
-  // Reset the once-guard when a new quote is created
-  useEffect(() => {
-    if (!flyover.quoteResult) callbackFiredRef.current = false;
-  }, [flyover.quoteResult]);
+  }, [
+    pegInStatus.isComplete,
+    onPegInComplete,
+    quoteHash,
+    flyover.quoteResult?.valueWei,
+    amountWei,
+  ]);
 
   const createQuote = useCallback(async () => {
     if (!rskAddress || !amountWei || amountWei <= 0n) return;

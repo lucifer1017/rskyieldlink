@@ -24,6 +24,7 @@ function statusToStep(status: DepositFlowStatus): number {
     case "waiting-for-btc":
       return 1;
     case "peg-in-complete":
+      return 2;
     case "deposit-pending":
       return 3;
     case "complete":
@@ -73,7 +74,11 @@ export function StatusStepper({ status }: StatusStepperProps) {
             : "bg-zinc-200 dark:bg-zinc-700";
 
           return (
-            <li key={step.label} className="relative flex flex-1 flex-col items-center">
+            <li
+              key={step.label}
+              aria-current={isActive ? "step" : undefined}
+              className="relative flex flex-1 flex-col items-center"
+            >
               {/* Connector line (not on first item) */}
               {idx > 0 && (
                 <div
@@ -83,7 +88,6 @@ export function StatusStepper({ status }: StatusStepperProps) {
               )}
               {/* Circle */}
               <div
-                aria-current={isActive ? "step" : undefined}
                 className={`relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition-colors ${circleClass}`}
               >
                 {isDone ? "✓" : isError && isActive ? "✗" : idx + 1}
